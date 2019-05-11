@@ -4,6 +4,8 @@ import android.Manifest;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.net.Uri;
 import android.provider.MediaStore;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -14,11 +16,15 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
 
+import java.io.FileNotFoundException;
+import java.io.InputStream;
+
 public class MainActivity extends AppCompatActivity {
 
     Button btnCamera,btnGallery;
     ImageView img;
     int Request_Camera = 123;
+    int Request_Gallery = 456;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -34,6 +40,12 @@ public class MainActivity extends AppCompatActivity {
                 ActivityCompat.requestPermissions(MainActivity.this,new String[]{Manifest.permission.CAMERA},Request_Camera);
             }
         });
+        btnGallery.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                ActivityCompat.requestPermissions(MainActivity.this,new String[]{Manifest.permission.READ_EXTERNAL_STORAGE},Request_Gallery);
+            }
+        });
     }
 
     @Override
@@ -44,6 +56,14 @@ public class MainActivity extends AppCompatActivity {
                 startActivityForResult(intent,Request_Camera);
             }
         }
+        if(requestCode == Request_Gallery){
+            if (grantResults[0] == PackageManager.PERMISSION_GRANTED){
+                Intent intent =  new Intent();
+                intent.setAction(Intent.ACTION_PICK);
+                intent.setType("image/*");
+                startActivityForResult(intent,Request_Gallery);
+            }
+        }
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
     }
 
@@ -52,6 +72,16 @@ public class MainActivity extends AppCompatActivity {
         if(requestCode == Request_Camera && resultCode == RESULT_OK && data != null){
            Bitmap bitmap = (Bitmap) data.getExtras().get("data");
            img.setImageBitmap(bitmap);
+        }
+        if(requestCode == Request_Gallery && resultCode == RESULT_OK && data != null){
+            Uri uri = data.getData();
+            try {
+                InputStream inputStream = getContentResolver().openInputStream(uri);
+                Bitmap bitmap = BitmapFactory.decodeStream(inputStream);
+                img.setImageBitmap(bitmap);
+            } catch (FileNotFoundException e) {
+                e.printStackTrace();
+            }
         }
         super.onActivityResult(requestCode, resultCode, data);
     }
